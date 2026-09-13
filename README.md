@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/32161428/README.md)
 # ExceptionIQ
 
 Operational exception intelligence & value recovery for B2B Order-to-Cash (O2C).
