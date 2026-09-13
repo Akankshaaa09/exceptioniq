@@ -534,6 +534,19 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1.6rem 0; }
 
 
 def conn():
+    # Streamlit Cloud: use the hosted PostgreSQL URL from Secrets.
+    # Local development: fall back to PG* environment variables.
+    database_url = None
+    try:
+        database_url = st.secrets.get("DATABASE_URL")
+    except Exception:
+        database_url = None
+
+    database_url = database_url or os.getenv("DATABASE_URL")
+
+    if database_url:
+        return psycopg2.connect(database_url)
+
     return psycopg2.connect(
         host=os.getenv("PGHOST", "localhost"),
         port=int(os.getenv("PGPORT", "5432")),
