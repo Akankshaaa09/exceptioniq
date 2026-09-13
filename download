@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Local IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local database / generated artifacts
+*.sqlite
+*.db
+*.dump
+*.backup
