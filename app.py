@@ -109,12 +109,18 @@ h3 { letter-spacing: -.025em; }
 /* Make native Streamlit controls readable after the editorial theme overrides. */
 .stSelectbox [data-baseweb="select"],
 .stSelectbox [data-baseweb="select"] > div,
-.stSelectbox [data-baseweb="select"] * {
+.stSelectbox [data-baseweb="select"] [role="combobox"],
+.stSelectbox [data-baseweb="select"] [role="combobox"] > div,
+.stSelectbox [data-baseweb="select"] [role="combobox"] span,
+.stSelectbox [data-baseweb="select"] [role="combobox"] div {
     color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    opacity: 1 !important;
 }
 .stSelectbox [data-baseweb="select"] svg {
     fill: var(--ink) !important;
     color: var(--ink) !important;
+    opacity: 1 !important;
 }
 .stTextArea textarea,
 .stTextInput input,
@@ -256,6 +262,33 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1.6rem 0; }
 }
 .section-head h2 { margin: 0; font-size: 1.35rem; }
 .section-head span { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; text-transform: uppercase; }
+
+.active-filter-row {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:.45rem;
+    margin:.7rem 0 1.05rem;
+}
+.active-filter-label {
+    font-family:'DM Mono',monospace;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-size:.61rem;
+    color:var(--muted);
+    margin-right:.2rem;
+}
+.filter-chip {
+    display:inline-flex;
+    align-items:center;
+    padding:.32rem .58rem;
+    border:1px solid var(--ink);
+    border-radius:999px;
+    background:var(--lime);
+    color:var(--ink);
+    font-size:.68rem;
+    font-weight:600;
+}
 
 .queue-wrap { border-top: 1px solid var(--ink); }
 .queue-row {
@@ -766,6 +799,20 @@ if page == "Action Center":
     types = q("SELECT DISTINCT exception_type FROM analytics.exception_cases ORDER BY 1")["exception_type"].tolist()
     with c:
         et = st.selectbox("Exception type  ▾", ["All"] + types)
+
+    active_filters = []
+    if status != "All":
+        active_filters.append(f"Status · {status}")
+    if priority != "All":
+        active_filters.append(f"Priority · {priority}")
+    if et != "All":
+        active_filters.append(f"Exception · {et}")
+    if active_filters:
+        chips = "".join(f'<span class="filter-chip">{esc(x)}</span>' for x in active_filters)
+        st.markdown(
+            f'<div class="active-filter-row"><span class="active-filter-label">Active filters</span>{chips}</div>',
+            unsafe_allow_html=True,
+        )
 
     cases = q(
         """
