@@ -583,6 +583,38 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1.6rem 0; }
     .queue-row > :nth-child(3), .queue-row > :nth-child(5), .queue-row > :nth-child(6) { display: none; }
     .detail-grid { grid-template-columns: 1fr; }
 }
+
+.choice-label {
+    color: var(--muted);
+    font-size: .78rem;
+    margin: 0 0 .35rem;
+}
+.choice-label .helper-chip { margin-left: .25rem; }
+div[data-testid="stPopover"] { width: 100%; }
+div[data-testid="stPopover"] > div > button {
+    width: 100% !important;
+    justify-content: space-between !important;
+    background: var(--panel) !important;
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    min-height: 52px !important;
+    padding: .65rem .9rem !important;
+    font-size: .92rem !important;
+    font-weight: 500 !important;
+}
+div[data-testid="stPopover"] > div > button:hover {
+    border-color: var(--ink) !important;
+    background: #FFFFFF !important;
+}
+div[data-testid="stPopover"] > div > button p {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+}
+div[data-testid="stPopover"] [data-testid="stRadio"] label {
+    color: var(--ink) !important;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -669,6 +701,40 @@ def status_badge(value):
     }.get(value, "badge-open")
     return f'<span class="badge {cls}">{esc(value)}</span>'
 
+
+
+
+def choice_control(label, options, key, format_func=str, help_text=None, default=None):
+    """Visible, genuinely interactive dropdown built from Streamlit primitives.
+    The selected value is rendered directly in the clickable button, avoiding
+    BaseWeb select text rendering issues while preserving keyboard-safe controls.
+    """
+    options = list(options)
+    if not options:
+        return None
+    if key not in st.session_state or st.session_state[key] not in options:
+        st.session_state[key] = default if default in options else options[0]
+    current = st.session_state[key]
+    display = format_func(current)
+    label_html = f'<div class="choice-label">{esc(label)}'
+    if help_text:
+        label_html += f' <span class="helper-chip" title="{esc(help_text)}">?</span>'
+    label_html += '</div>'
+    st.markdown(label_html, unsafe_allow_html=True)
+    pop = st.popover(f"{display}  ▾", use_container_width=True)
+    with pop:
+        choice = st.radio(
+            "Select an option",
+            options,
+            index=options.index(current),
+            format_func=format_func,
+            key=f"{key}__radio",
+            label_visibility="collapsed",
+        )
+    if choice != st.session_state[key]:
+        st.session_state[key] = choice
+        st.rerun()
+    return st.session_state[key]
 
 def topbar():
     st.markdown(
@@ -816,12 +882,12 @@ if page == "Action Center":
 
     a, b, c = st.columns([1, 1, 1.5])
     with a:
-        status = st.selectbox("Status  ▾", ["All", "Open", "Investigating", "Resolved", "Dismissed"])
+        status = choice_control("Status", ["All", "Open", "Investigating", "Resolved", "Dismissed"], "action_status")
     with b:
-        priority = st.selectbox("Priority  ▾", ["All", "P1 - Immediate", "P2 - High", "P3 - Routine"])
+        priority = choice_control("Priority", ["All", "P1 - Immediate", "P2 - High", "P3 - Routine"], "action_priority")
     types = q("SELECT DISTINCT exception_type FROM analytics.exception_cases ORDER BY 1")["exception_type"].tolist()
     with c:
-        et = st.selectbox("Exception type  ▾", ["All"] + types)
+        et = choice_control("Exception type", ["All"] + types, "action_exception")
 
     active_filters = []
     if status != "All":
@@ -892,7 +958,7 @@ elif page == "Investigation":
 
     st.markdown('<div class="page-intro"><div class="intro-title">Understand before you act.</div><div class="intro-copy">Choose a case to see what happened, how much value is at stake, and the source records behind the exception. Use this page to gather enough context to make an operational decision.</div></div>', unsafe_allow_html=True)
     ids = q("SELECT case_id FROM analytics.exception_cases ORDER BY priority_score DESC, estimated_recoverable DESC")["case_id"].tolist()
-    selected = st.selectbox("Choose a case  ▾", ids, format_func=lambda x: f"Case #{int(x):05d}")
+    selected = choice_control("Choose a case", ids, "investigation_case", format_func=lambda x: f"Case #{int(x):05d}")
 
     d = q(
         """
@@ -958,11 +1024,11 @@ elif page == "Investigation":
             st.markdown('<div class="workflow-step">Ticket details</div>', unsafe_allow_html=True)
             ta, tb = st.columns([1, 2])
             with ta:
-                team = st.selectbox(
-                    "Assigned team  ▾",
+                team = choice_control(
+                    "Assigned team",
                     ["Collections", "Billing", "Fulfillment", "Account Management", "Finance"],
-                    key=f"ticket_team_{selected}",
-                    help="The operational team responsible for the next action.",
+                    f"ticket_team_{selected}",
+                    help_text="The operational team responsible for the next action.",
                 )
             with tb:
                 title = st.text_input(
@@ -1082,7 +1148,7 @@ elif page == "Resolution":
         st.stop()
 
     st.markdown('<div class="page-intro"><div class="intro-title">Turn the investigation into an outcome.</div><div class="intro-copy">Once a case has been reviewed, record what you did, what was decided, and how much value was actually recovered. This keeps the case history useful to the next person and feeds the outcomes view.</div></div>', unsafe_allow_html=True)
-    selected = st.selectbox("Choose a case to update  ▾", open_.case_id.tolist(), format_func=lambda x: f"Case #{int(x):05d}")
+    selected = choice_control("Choose a case to update", open_.case_id.tolist(), "resolution_case", format_func=lambda x: f"Case #{int(x):05d}")
     r = open_[open_.case_id == selected].iloc[0]
 
     st.markdown(
@@ -1106,7 +1172,7 @@ elif page == "Resolution":
     st.markdown('<div class="workflow-step">01 · Record the outcome</div>', unsafe_allow_html=True)
     a, b = st.columns([1, 1])
     with a:
-        ns = st.selectbox("What is the new status?  ▾", ["Investigating", "Resolved", "Dismissed"], index=0 if r.status == "Open" else 0, help="Investigating = still being worked. Resolved = corrective action completed. Dismissed = reviewed and no action is required.")
+        ns = choice_control("What is the new status?", ["Investigating", "Resolved", "Dismissed"], "resolution_status", help_text="Investigating = still being worked. Resolved = corrective action completed. Dismissed = reviewed and no action is required.", default="Investigating")
         recovered = st.number_input(
             "How much was actually recovered?",
             min_value=0.0,
