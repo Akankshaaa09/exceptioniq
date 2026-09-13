@@ -400,6 +400,20 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1.6rem 0; }
 }
 .stSelectbox [data-baseweb="select"]:hover { border-color:var(--ink) !important; }
 .stSelectbox [data-baseweb="select"] svg { opacity:1 !important; width:19px !important; height:19px !important; }
+/* Streamlit/BaseWeb React-Select uses a generated class for the selected value.
+   Target the stable class fragment so the chosen option is visible inside the control. */
+.stSelectbox [data-baseweb="select"] [class*="singleValue"],
+.stSelectbox [data-baseweb="select"] [class*="valueContainer"] {
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+.stSelectbox [data-baseweb="select"] [class*="singleValue"] * {
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+    opacity: 1 !important;
+}
 
 .stNumberInput > div > div {
     border:1px solid #AAA79E !important;
