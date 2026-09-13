@@ -106,13 +106,22 @@ h3 { letter-spacing: -.025em; }
     border-color: var(--line) !important;
     border-radius: 10px !important;
 }
-/* Make native Streamlit controls readable after the editorial theme overrides. */
+/* Selectboxes: force the actual selected-value node visible. BaseWeb/React-Select
+   uses generated class names, so target stable class fragments as well as roles. */
 .stSelectbox [data-baseweb="select"],
 .stSelectbox [data-baseweb="select"] > div,
 .stSelectbox [data-baseweb="select"] [role="combobox"],
 .stSelectbox [data-baseweb="select"] [role="combobox"] > div,
 .stSelectbox [data-baseweb="select"] [role="combobox"] span,
-.stSelectbox [data-baseweb="select"] [role="combobox"] div {
+.stSelectbox [data-baseweb="select"] [role="combobox"] div,
+.stSelectbox [data-baseweb="select"] [class*="singleValue"],
+.stSelectbox [data-baseweb="select"] [class*="valueContainer"],
+.stSelectbox [data-baseweb="select"] [class*="ValueContainer"] {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    opacity: 1 !important;
+}
+.stSelectbox [data-baseweb="select"] [class*="singleValue"] * {
     color: var(--ink) !important;
     -webkit-text-fill-color: var(--ink) !important;
     opacity: 1 !important;
