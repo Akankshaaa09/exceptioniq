@@ -27,7 +27,7 @@ The app expects an accessible PostgreSQL database containing the `analytics` sch
    `DATABASE_URL = "postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"`
 4. Deploy.
 
-Do not commit database credentials. Streamlit Community Cloud secrets are stored outside the repository.
+Streamlit Community Cloud secrets are stored outside the repository.
 
 ## Database note
 The local development database currently runs on PostgreSQL. A cloud deployment cannot reach `localhost`, so the same schema/data must be hosted on an externally reachable PostgreSQL provider (for example, Neon or Supabase) before the deployed app can function end-to-end.
