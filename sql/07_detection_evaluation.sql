@@ -74,9 +74,10 @@ duplicate_invoice_gt AS (
     WHERE g.exception_type = 'Duplicate invoice'
 ),
 
--- For duplicate payments, the detector is invoice-level while the
--- ground truth identifies the specific duplicate payment row.
-duplicate_payment_gt AS (
+-- For payment exceptions (duplicate, partial, overdue), the detector is
+-- invoice-level while the ground truth identifies the specific payment row.
+-- Bridge each planted payment to its invoice before matching.
+payment_level_gt AS (
     SELECT
         g.exception_type,
         g.source_record_id AS ground_truth_record_id,
@@ -84,7 +85,7 @@ duplicate_payment_gt AS (
     FROM gt g
     JOIN raw.payments p
       ON p.payment_id = g.source_record_id
-    WHERE g.exception_type = 'Duplicate payment'
+    WHERE g.exception_type IN ('Duplicate payment', 'Partial payment', 'Overdue payment')
 ),
 
 normalized_detections AS (
@@ -115,7 +116,9 @@ matched_gt AS (
     LEFT JOIN normalized_detections d
       ON d.exception_type = g.exception_type
      AND d.source_record_id = g.source_record_id
-    WHERE g.exception_type NOT IN ('Duplicate invoice', 'Duplicate payment')
+    WHERE g.exception_type NOT IN (
+        'Duplicate invoice', 'Duplicate payment', 'Partial payment', 'Overdue payment'
+    )
 
     UNION ALL
 
@@ -141,8 +144,8 @@ matched_gt AS (
 
     UNION ALL
 
-    -- Duplicate payment: match detector invoice_id to the invoice
-    -- associated with the ground-truth duplicate payment.
+    -- Payment exceptions: match detector invoice_id to the invoice
+    -- associated with the ground-truth payment, within the same type.
     SELECT
         g.exception_type,
         g.ground_truth_record_id,
@@ -153,12 +156,12 @@ matched_gt AS (
         gt2.expected_financial_impact,
         d.gross_exposure,
         d.estimated_recoverable
-    FROM duplicate_payment_gt g
+    FROM payment_level_gt g
     JOIN gt gt2
       ON gt2.exception_type = g.exception_type
      AND gt2.source_record_id = g.ground_truth_record_id
     LEFT JOIN normalized_detections d
-      ON d.exception_type = 'Duplicate payment'
+      ON d.exception_type = g.exception_type
      AND d.source_record_id = g.invoice_id
 ),
 
